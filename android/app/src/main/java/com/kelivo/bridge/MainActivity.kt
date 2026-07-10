@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
 class MainActivity : Activity() {
@@ -18,55 +20,81 @@ class MainActivity : Activity() {
 
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(40, 40, 40, 40)
+        layout.setPadding(40,40,40,40)
 
         val title = TextView(this)
         title.text = "Kelivo Bridge"
         title.textSize = 30f
         title.gravity = Gravity.CENTER
 
-        val status = TextView(this)
-        status.text = "● 服务状态：运行中"
-
         val serverInput = EditText(this)
         serverInput.hint = "服务器地址"
         serverInput.setText(
-            prefs.getString("server", "https://memory5-vuv9.onrender.com")
+            prefs.getString(
+                "server",
+                "https://memory5-vuv9.onrender.com"
+            )
         )
 
-        val keyInput = EditText(this)
-        keyInput.hint = "API Key"
-        keyInput.setText(
-            prefs.getString("key", "")
-        )
+        val messageInput = EditText(this)
+        messageInput.hint = "输入测试消息"
+        messageInput.setText("你好，你记得我吗？")
+
+        val result = TextView(this)
+        result.text = "等待回复..."
+        result.textSize = 18f
 
         val saveButton = Button(this)
-        saveButton.text = "保存配置"
+        saveButton.text = "保存地址"
 
         saveButton.setOnClickListener {
-
             prefs.edit()
-                .putString("server", serverInput.text.toString())
-                .putString("key", keyInput.text.toString())
+                .putString(
+                    "server",
+                    serverInput.text.toString()
+                )
                 .apply()
 
             Toast.makeText(
                 this,
-                "配置已保存",
+                "已保存",
                 Toast.LENGTH_SHORT
             ).show()
         }
 
-        val testButton = Button(this)
-        testButton.text = "测试连接"
 
-        testButton.setOnClickListener {
+        val sendButton = Button(this)
+        sendButton.text = "发送测试消息"
 
-            val url = serverInput.text.toString()
+        sendButton.setOnClickListener {
+
+            val json = """
+            {
+              "model":"deepseek-ai/DeepSeek-V4-Flash",
+              "messages":[
+                {
+                  "role":"user",
+                  "content":"${messageInput.text}"
+                }
+              ]
+            }
+            """.trimIndent()
+
+
+            val body = json.toRequestBody(
+                "application/json".toMediaType()
+            )
 
             val request = Request.Builder()
-                .url(url)
+                .url(
+                    serverInput.text.toString()
+                    + "/v1/chat/completions"
+                )
+                .post(body)
                 .build()
+
+
+            result.text = "请求中..."
 
             client.newCall(request)
                 .enqueue(object : Callback {
@@ -76,35 +104,35 @@ class MainActivity : Activity() {
                         e: IOException
                     ) {
                         runOnUiThread {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "连接失败: ${e.message}",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            result.text =
+                                "失败:\n${e.message}"
                         }
                     }
+
 
                     override fun onResponse(
                         call: Call,
                         response: Response
                     ) {
+
+                        val text =
+                            response.body?.string()
+
                         runOnUiThread {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "连接成功: ${response.code}",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            result.text =
+                                "状态:${response.code}\n\n$text"
                         }
                     }
                 })
         }
 
+
         layout.addView(title)
-        layout.addView(status)
         layout.addView(serverInput)
-        layout.addView(keyInput)
+        layout.addView(messageInput)
         layout.addView(saveButton)
-        layout.addView(testButton)
+        layout.addView(sendButton)
+        layout.addView(result)
 
         setContentView(layout)
     }
