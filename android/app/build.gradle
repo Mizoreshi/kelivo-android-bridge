@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.kelivo.bridge'
-    compileSdk 35
+    compileSdk 31
 
     defaultConfig {
         applicationId "com.kelivo.bridge"
         minSdk 26
-        targetSdk 35
+        targetSdk 31
         versionCode 1
         versionName "1.0"
     }
