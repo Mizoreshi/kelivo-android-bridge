@@ -4,8 +4,12 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
+import okhttp3.*
+import java.io.IOException
 
 class MainActivity : Activity() {
+
+    private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,40 +27,27 @@ class MainActivity : Activity() {
 
         val status = TextView(this)
         status.text = "● 服务状态：运行中"
-        status.textSize = 20f
-
-        val serverLabel = TextView(this)
-        serverLabel.text = "服务器地址"
 
         val serverInput = EditText(this)
-        serverInput.hint = "输入服务器地址"
+        serverInput.hint = "服务器地址"
         serverInput.setText(
-            prefs.getString("server", "")
+            prefs.getString("server", "https://memory5-vuv9.onrender.com")
         )
 
-        val keyLabel = TextView(this)
-        keyLabel.text = "API Key"
-
         val keyInput = EditText(this)
-        keyInput.hint = "输入API Key"
+        keyInput.hint = "API Key"
         keyInput.setText(
             prefs.getString("key", "")
         )
 
-        val button = Button(this)
-        button.text = "保存配置"
+        val saveButton = Button(this)
+        saveButton.text = "保存配置"
 
-        button.setOnClickListener {
+        saveButton.setOnClickListener {
 
             prefs.edit()
-                .putString(
-                    "server",
-                    serverInput.text.toString()
-                )
-                .putString(
-                    "key",
-                    keyInput.text.toString()
-                )
+                .putString("server", serverInput.text.toString())
+                .putString("key", keyInput.text.toString())
                 .apply()
 
             Toast.makeText(
@@ -66,13 +57,54 @@ class MainActivity : Activity() {
             ).show()
         }
 
+        val testButton = Button(this)
+        testButton.text = "测试连接"
+
+        testButton.setOnClickListener {
+
+            val url = serverInput.text.toString()
+
+            val request = Request.Builder()
+                .url(url)
+                .build()
+
+            client.newCall(request)
+                .enqueue(object : Callback {
+
+                    override fun onFailure(
+                        call: Call,
+                        e: IOException
+                    ) {
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "连接失败: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    override fun onResponse(
+                        call: Call,
+                        response: Response
+                    ) {
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "连接成功: ${response.code}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                })
+        }
+
         layout.addView(title)
         layout.addView(status)
-        layout.addView(serverLabel)
         layout.addView(serverInput)
-        layout.addView(keyLabel)
         layout.addView(keyInput)
-        layout.addView(button)
+        layout.addView(saveButton)
+        layout.addView(testButton)
 
         setContentView(layout)
     }
