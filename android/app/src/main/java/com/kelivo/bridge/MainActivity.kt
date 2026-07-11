@@ -2,7 +2,6 @@ package com.kelivo.bridge
 
 import android.app.Activity
 import android.os.Bundle
-import android.view.Gravity
 import android.widget.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,59 +21,26 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val prefs = getSharedPreferences("config", MODE_PRIVATE)
-
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(40,40,40,40)
 
-        val title = TextView(this)
-        title.text = "Kelivo Bridge"
-        title.textSize = 30f
-        title.gravity = Gravity.CENTER
-
         val serverInput = EditText(this)
-        serverInput.hint = "服务器地址"
-        serverInput.setText(
-            prefs.getString(
-                "server",
-                "https://memory5-vuv9.onrender.com"
-            )
-        )
+        serverInput.setText("https://memory5-vuv9.onrender.com")
 
         val messageInput = EditText(this)
-        messageInput.hint = "输入测试消息"
         messageInput.setText("你好，你记得我吗？")
 
         val result = TextView(this)
-        result.text = "等待回复..."
-        result.textSize = 18f
+        result.text = "等待回复"
 
 
-        val saveButton = Button(this)
-        saveButton.text = "保存地址"
+        val button = Button(this)
+        button.text = "发送测试消息"
 
-        saveButton.setOnClickListener {
+        button.setOnClickListener {
 
-            prefs.edit()
-                .putString(
-                    "server",
-                    serverInput.text.toString()
-                )
-                .apply()
-
-            Toast.makeText(
-                this,
-                "已保存",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-
-        val sendButton = Button(this)
-        sendButton.text = "发送测试消息"
-
-        sendButton.setOnClickListener {
+            result.text = "请求中，请等待..."
 
             val json = """
             {
@@ -103,4 +69,39 @@ class MainActivity : Activity() {
                 .build()
 
 
-            result.text = "请求中，请等待..."
+            client.newCall(request)
+                .enqueue(object: Callback {
+
+                    override fun onFailure(
+                        call: Call,
+                        e: IOException
+                    ) {
+                        runOnUiThread {
+                            result.text = e.message
+                        }
+                    }
+
+
+                    override fun onResponse(
+                        call: Call,
+                        response: Response
+                    ) {
+                        val text = response.body?.string()
+
+                        runOnUiThread {
+                            result.text =
+                                "状态:${response.code}\n$text"
+                        }
+                    }
+                })
+        }
+
+
+        layout.addView(serverInput)
+        layout.addView(messageInput)
+        layout.addView(button)
+        layout.addView(result)
+
+        setContentView(layout)
+    }
+}
