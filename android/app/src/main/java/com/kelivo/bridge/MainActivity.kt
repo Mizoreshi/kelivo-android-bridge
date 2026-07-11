@@ -4,15 +4,20 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
-import com.kelivo.bridge.tools.ScreenTimeTool
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class MainActivity : Activity() {
 
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(180, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,10 +50,12 @@ class MainActivity : Activity() {
         result.text = "等待回复..."
         result.textSize = 18f
 
+
         val saveButton = Button(this)
         saveButton.text = "保存地址"
 
         saveButton.setOnClickListener {
+
             prefs.edit()
                 .putString(
                     "server",
@@ -86,6 +93,7 @@ class MainActivity : Activity() {
                 "application/json".toMediaType()
             )
 
+
             val request = Request.Builder()
                 .url(
                     serverInput.text.toString()
@@ -95,55 +103,4 @@ class MainActivity : Activity() {
                 .build()
 
 
-            result.text = "请求中..."
-
-            client.newCall(request)
-                .enqueue(object : Callback {
-
-                    override fun onFailure(
-                        call: Call,
-                        e: IOException
-                    ) {
-                        runOnUiThread {
-                            result.text =
-                                "失败:\n${e.message}"
-                        }
-                    }
-
-
-                    override fun onResponse(
-                        call: Call,
-                        response: Response
-                    ) {
-
-                        val text =
-                            response.body?.string()
-
-                        runOnUiThread {
-                            result.text =
-                                "状态:${response.code}\n\n$text"
-                        }
-                    }
-                })
-        }
-
-
-
-        val screenButton = Button(this)
-        screenButton.text = "读取屏幕使用时间"
-
-        screenButton.setOnClickListener {
-            result.text = ScreenTimeTool(this).getTodayUsage()
-        }
-
-        layout.addView(title)
-        layout.addView(serverInput)
-        layout.addView(messageInput)
-        layout.addView(saveButton)
-        layout.addView(sendButton)
-        layout.addView(screenButton)
-        layout.addView(result)
-
-        setContentView(layout)
-    }
-}
+            result.text = "请求中，请等待
