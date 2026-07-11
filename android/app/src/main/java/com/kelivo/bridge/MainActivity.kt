@@ -103,4 +103,4 @@ class MainActivity : Activity() {
                 .build()
 
 
-            result.text = "请求中，请等待
+            result.text = "请求中，请等待..."
