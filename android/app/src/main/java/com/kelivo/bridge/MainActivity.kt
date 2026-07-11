@@ -170,10 +170,25 @@ fun ChatPage(){
             .padding(16.dp)
     ){
 
-        Text(
-            "Kelivo AI",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ){
+
+            Text(
+                "◉ 砚",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(
+                modifier = Modifier.width(12.dp)
+            )
+
+            Text(
+                "在线",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+        }
 
 
         Spacer(
@@ -398,6 +413,9 @@ fun sendMessage(
                                 .getJSONObject(0)
                                 .getJSONObject("message")
                                 .getString("content")
+                                .replace("。", "。\\n\\n")
+                                .replace("！", "！\\n\\n")
+                                .replace("？", "？\\n\\n")
 
 
                         callback(result)

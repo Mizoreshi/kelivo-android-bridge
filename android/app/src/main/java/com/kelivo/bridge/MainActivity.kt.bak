@@ -317,7 +317,20 @@ fun sendMessage(
 ){
 
     val client =
-        OkHttpClient()
+        OkHttpClient.Builder()
+            .connectTimeout(
+                120,
+                java.util.concurrent.TimeUnit.SECONDS
+            )
+            .readTimeout(
+                120,
+                java.util.concurrent.TimeUnit.SECONDS
+            )
+            .writeTimeout(
+                120,
+                java.util.concurrent.TimeUnit.SECONDS
+            )
+            .build()
 
 
     val json =
