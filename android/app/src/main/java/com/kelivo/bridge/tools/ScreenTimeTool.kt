@@ -15,18 +15,9 @@ class ScreenTimeTool(private val context: Context) {
 
         val calendar = Calendar.getInstance()
 
-        calendar.set(
-            Calendar.HOUR_OF_DAY,
-            0
-        )
-        calendar.set(
-            Calendar.MINUTE,
-            0
-        )
-        calendar.set(
-            Calendar.SECOND,
-            0
-        )
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
 
         val stats =
             usageStatsManager.queryUsageStats(
@@ -39,20 +30,38 @@ class ScreenTimeTool(private val context: Context) {
             return "没有获取到使用数据"
         }
 
+        val apps = stats.map {
+            Pair(
+                it.packageName,
+                it.totalTimeInForeground / 60000
+            )
+        }
+            .filter {
+                it.second > 0
+            }
+            .sortedByDescending {
+                it.second
+            }
+            .take(10)
+
+
+        if (apps.isEmpty()) {
+            return "今天没有使用记录"
+        }
+
+
         val result = StringBuilder()
 
-        for (item in stats) {
+        result.append("今日屏幕使用时间\n\n")
 
-            val minutes =
-                item.totalTimeInForeground / 60000
 
-            if (minutes > 0) {
+        for (app in apps) {
 
-                result.append(
-                    "${item.packageName}: ${minutes}分钟\n"
-                )
-            }
+            result.append(
+                "${app.first}  ${app.second}分钟\n"
+            )
         }
+
 
         return result.toString()
     }
