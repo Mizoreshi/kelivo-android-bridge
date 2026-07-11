@@ -4,7 +4,6 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
-import com.kelivo.bridge.tools.ScreenTimeTool
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -128,20 +127,11 @@ class MainActivity : Activity() {
         }
 
 
-
-        val screenButton = Button(this)
-        screenButton.text = "读取屏幕使用时间"
-
-        screenButton.setOnClickListener {
-            result.text = ScreenTimeTool(this).getTodayUsage()
-        }
-
         layout.addView(title)
         layout.addView(serverInput)
         layout.addView(messageInput)
         layout.addView(saveButton)
         layout.addView(sendButton)
-        layout.addView(screenButton)
         layout.addView(result)
 
         setContentView(layout)
