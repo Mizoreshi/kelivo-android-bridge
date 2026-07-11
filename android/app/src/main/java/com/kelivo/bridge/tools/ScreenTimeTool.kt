@@ -6,6 +6,36 @@ import java.util.Calendar
 
 class ScreenTimeTool(private val context: Context) {
 
+    private fun formatTime(minutes: Long): String {
+
+        val hour = minutes / 60
+        val minute = minutes % 60
+
+        return if (hour > 0) {
+            "${hour}小时${minute}分钟"
+        } else {
+            "${minute}分钟"
+        }
+    }
+
+
+    private fun getAppName(packageName: String): String {
+
+        return when(packageName) {
+
+            "com.ss.android.ugc.aweme" -> "抖音"
+
+            "com.tencent.mm" -> "微信"
+
+            "com.tencent.mobileqq" -> "QQ"
+
+            "com.android.chrome" -> "Chrome"
+
+            else -> packageName
+        }
+    }
+
+
     fun getTodayUsage(): String {
 
         val usageStatsManager =
@@ -13,11 +43,13 @@ class ScreenTimeTool(private val context: Context) {
                 Context.USAGE_STATS_SERVICE
             ) as UsageStatsManager
 
+
         val calendar = Calendar.getInstance()
 
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
+
 
         val stats =
             usageStatsManager.queryUsageStats(
@@ -26,23 +58,27 @@ class ScreenTimeTool(private val context: Context) {
                 System.currentTimeMillis()
             )
 
+
         if (stats.isNullOrEmpty()) {
             return "没有获取到使用数据"
         }
 
+
         val apps = stats.map {
+
             Pair(
                 it.packageName,
                 it.totalTimeInForeground / 60000
             )
+
         }
-            .filter {
-                it.second > 0
-            }
-            .sortedByDescending {
-                it.second
-            }
-            .take(10)
+        .filter {
+            it.second > 0
+        }
+        .sortedByDescending {
+            it.second
+        }
+        .take(10)
 
 
         if (apps.isEmpty()) {
@@ -58,7 +94,7 @@ class ScreenTimeTool(private val context: Context) {
         for (app in apps) {
 
             result.append(
-                "${app.first}  ${app.second}分钟\n"
+                "${getAppName(app.first)}  ${formatTime(app.second)}\n"
             )
         }
 
