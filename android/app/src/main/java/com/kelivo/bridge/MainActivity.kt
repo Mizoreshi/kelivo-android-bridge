@@ -15,6 +15,7 @@ class MainActivity : Activity() {
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(180, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(300, TimeUnit.SECONDS)
         .build()
 
 
@@ -25,11 +26,18 @@ class MainActivity : Activity() {
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(40,40,40,40)
 
+
         val serverInput = EditText(this)
-        serverInput.setText("https://memory5-vuv9.onrender.com")
+        serverInput.hint = "服务器地址"
+        serverInput.setText(
+            "https://memory5-vuv9.onrender.com"
+        )
+
 
         val messageInput = EditText(this)
+        messageInput.hint = "输入测试消息"
         messageInput.setText("你好，你记得我吗？")
+
 
         val result = TextView(this)
         result.text = "等待回复"
@@ -38,9 +46,11 @@ class MainActivity : Activity() {
         val button = Button(this)
         button.text = "发送测试消息"
 
+
         button.setOnClickListener {
 
             result.text = "请求中，请等待..."
+
 
             val json = """
             {
@@ -70,14 +80,17 @@ class MainActivity : Activity() {
 
 
             client.newCall(request)
-                .enqueue(object: Callback {
+                .enqueue(object : Callback {
+
 
                     override fun onFailure(
                         call: Call,
                         e: IOException
                     ) {
+
                         runOnUiThread {
-                            result.text = e.message
+                            result.text =
+                                "失败:\n${e.message}"
                         }
                     }
 
@@ -86,11 +99,15 @@ class MainActivity : Activity() {
                         call: Call,
                         response: Response
                     ) {
-                        val text = response.body?.string()
+
+                        val text =
+                            response.body?.string()
+
 
                         runOnUiThread {
+
                             result.text =
-                                "状态:${response.code}\n$text"
+                                "状态:${response.code}\n\n$text"
                         }
                     }
                 })
@@ -101,6 +118,7 @@ class MainActivity : Activity() {
         layout.addView(messageInput)
         layout.addView(button)
         layout.addView(result)
+
 
         setContentView(layout)
     }
