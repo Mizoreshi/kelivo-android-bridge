@@ -3,6 +3,7 @@ package com.kelivo.bridge
 import android.app.Activity
 import android.os.Bundle
 import android.widget.*
+import com.kelivo.bridge.tools.ScreenTimeTool
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -41,13 +42,14 @@ class MainActivity : Activity() {
 
         val result = TextView(this)
         result.text = "等待回复"
+        result.textSize = 18f
 
 
-        val button = Button(this)
-        button.text = "发送测试消息"
+        val sendButton = Button(this)
+        sendButton.text = "发送测试消息"
 
 
-        button.setOnClickListener {
+        sendButton.setOnClickListener {
 
             result.text = "请求中，请等待..."
 
@@ -82,12 +84,10 @@ class MainActivity : Activity() {
             client.newCall(request)
                 .enqueue(object : Callback {
 
-
                     override fun onFailure(
                         call: Call,
                         e: IOException
                     ) {
-
                         runOnUiThread {
                             result.text =
                                 "失败:\n${e.message}"
@@ -103,9 +103,7 @@ class MainActivity : Activity() {
                         val text =
                             response.body?.string()
 
-
                         runOnUiThread {
-
                             result.text =
                                 "状态:${response.code}\n\n$text"
                         }
@@ -114,9 +112,22 @@ class MainActivity : Activity() {
         }
 
 
+        val screenButton = Button(this)
+        screenButton.text = "读取屏幕使用时间"
+
+
+        screenButton.setOnClickListener {
+
+            result.text =
+                ScreenTimeTool(this).getTodayUsage()
+
+        }
+
+
         layout.addView(serverInput)
         layout.addView(messageInput)
-        layout.addView(button)
+        layout.addView(sendButton)
+        layout.addView(screenButton)
         layout.addView(result)
 
 
