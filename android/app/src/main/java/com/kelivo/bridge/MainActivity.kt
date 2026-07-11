@@ -4,10 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.kelivo.bridge.tools.ScreenTimeTool
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
 
 class MainActivity : ComponentActivity() {
@@ -16,9 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-
             KelivoApp()
-
         }
     }
 }
@@ -27,95 +32,255 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun KelivoApp() {
 
-    var message by remember {
-        mutableStateOf("")
+    var page by remember {
+        mutableStateOf("聊天")
     }
 
 
-    MaterialTheme {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+
+        Box(
+            modifier = Modifier.weight(1f)
         ) {
 
+            when(page) {
 
-            Text(
-                text = "Kelivo AI",
-                style = MaterialTheme.typography.headlineMedium
-            )
+                "聊天" -> ChatPage()
 
-
-            Spacer(
-                modifier = Modifier.height(20.dp)
-            )
-
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-
-                Text(
-                    "聊天记录区域"
-                )
-
-            }
+                "AI" -> {
+                    Text(
+                        "AI设置页面",
+                        modifier = Modifier.padding(20.dp)
+                    )
+                }
 
 
-            Row {
+                "手机" -> {
 
-                TextField(
-                    value = message,
-                    onValueChange = {
-                        message = it
-                    },
-                    modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text("输入消息")
-                    }
-                )
+                    val context = androidx.compose.ui.platform.LocalContext.current
 
-
-                Spacer(
-                    modifier = Modifier.width(8.dp)
-                )
-
-
-                Button(
-                    onClick = {
-
-                    }
-                ) {
-
-                    Text("发送")
+                    Text(
+                        ScreenTimeTool(context).getTodayUsage(),
+                        modifier = Modifier.padding(20.dp)
+                    )
 
                 }
 
             }
 
+        }
 
-            Spacer(
-                modifier = Modifier.height(10.dp)
+
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+
+
+            Button(
+                onClick = {
+                    page="聊天"
+                }
+            ){
+                Text("聊天")
+            }
+
+
+            Button(
+                onClick = {
+                    page="AI"
+                }
+            ){
+                Text("AI")
+            }
+
+
+            Button(
+                onClick = {
+                    page="手机"
+                }
+            ){
+                Text("手机")
+            }
+
+        }
+
+    }
+
+}
+
+
+
+@Composable
+fun ChatPage(){
+
+    var input by remember {
+        mutableStateOf("")
+    }
+
+
+    var messages by remember {
+        mutableStateOf(
+            listOf<String>()
+        )
+    }
+
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ){
+
+
+        Text(
+            "Kelivo AI",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ){
+
+            items(messages){
+
+                Text(
+                    it,
+                    modifier = Modifier.padding(8.dp)
+                )
+
+            }
+
+        }
+
+
+
+        Row {
+
+
+            TextField(
+                value=input,
+                onValueChange={
+                    input=it
+                },
+                modifier=Modifier.weight(1f)
             )
 
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
+            Button(
+                onClick={
 
-                Text("聊天")
+                    val msg=input
 
-                Text("AI")
+                    messages =
+                        messages + "我: $msg"
 
-                Text("手机")
+                    input=""
+
+                    sendMessage(
+                        msg
+                    ){ reply ->
+
+                        messages =
+                            messages + "AI: $reply"
+
+                    }
+
+                }
+            ){
+
+                Text("发送")
 
             }
 
         }
 
     }
+
+}
+
+
+
+
+fun sendMessage(
+    text:String,
+    callback:(String)->Unit
+){
+
+
+    val client =
+        OkHttpClient()
+
+
+    val json =
+        """
+        {
+        "model":"deepseek-ai/DeepSeek-V4-Flash",
+        "messages":[
+        {
+        "role":"user",
+        "content":"$text"
+        }
+        ]
+        }
+        """.trimIndent()
+
+
+
+    val request =
+        Request.Builder()
+            .url(
+                "https://memory5-vuv9.onrender.com/v1/chat/completions"
+            )
+            .post(
+                json.toRequestBody(
+                    "application/json".toMediaType()
+                )
+            )
+            .build()
+
+
+
+    client.newCall(request)
+        .enqueue(
+            object:Callback{
+
+
+                override fun onFailure(
+                    call:Call,
+                    e:IOException
+                ){
+
+                    callback(
+                        "失败: ${e.message}"
+                    )
+
+                }
+
+
+
+                override fun onResponse(
+                    call:Call,
+                    response:Response
+                ){
+
+                    callback(
+                        response.body?.string()
+                            ?: "空回复"
+                    )
+
+                }
+
+            }
+        )
+
 }
